@@ -51,6 +51,7 @@ make dev-frontend   # http://localhost:5173
 | `MAX_ORDER_AMOUNT_KRW` | 100만원 | 1회 주문금액 상한 |
 | `MAX_DAILY_ORDERS` | 10 | 24시간 주문 건수 상한 |
 | `MAX_POSITION_WEIGHT` | 0.30 | 단일 종목 최대 비중 |
+| `ENFORCE_MARKET_HOURS` | `true` | 장 운영시간 밖 주문 사전 차단 (휴장일은 판단 못함) |
 | 사람 승인 | 필수 | 스케줄러는 마감/판정/정산만 자동화하고, 주문 승인은 안 한다 |
 
 매도 주문은 보유 수량을 넘을 수 없고, 매수는 잔고 조회가 실패하면 **차단**된다
@@ -62,14 +63,22 @@ make dev-frontend   # http://localhost:5173
 
 1. `BROKER_BACKEND=kis`, `KIS_ENV=paper`로 모의투자에서 한 사이클(개설→베팅→집행→정산)을
    끝까지 돌려본다.
-2. `backend/app/brokers/kis/constants.py`의 `tr_id` 값을 KIS 개발자센터 문서와 대조한다.
-   KIS는 거래ID를 종종 개편하며, 틀리면 주문이 거부된다. 필요하면 `KIS_TR_ID_*` 환경변수로
-   덮어쓴다.
+2. `backend/app/brokers/kis/constants.py`의 **실전** `tr_id` 값을 KIS 개발자센터 문서와
+   대조한다. KIS는 거래ID를 종종 개편하며, 틀리면 주문이 거부된다. 필요하면
+   `KIS_TR_ID_*` 환경변수로 덮어쓴다. 모의 값은 실전 값에서 규칙으로 파생되므로
+   따로 확인할 필요가 없다.
 3. `MAX_ORDER_AMOUNT_KRW`를 아주 작게(예: 1만원) 잡는다.
-4. `KIS_ENV=live` + `ALLOW_LIVE_TRADING=true`로 소액 1주 주문을 내본다.
+4. `KIS_ENV=live` + `ALLOW_LIVE_TRADING=true`로 **정규장 시간에** 소액 1주 주문을 내본다.
 5. 확인되면 한도를 실제 운용 규모로 올린다.
 
 UI 상단에는 현재 모드가 항상 배너로 표시된다.
+
+## KIS 공식 툴킷 / MCP
+
+[koreainvestment/kis-ai-extensions](https://github.com/koreainvestment/kis-ai-extensions)의
+백테스팅 MCP 서버를 개발용으로 붙여뒀다(`.mcp.json`). 마켓을 열기 전에 그 아이디어가
+과거에 통했는지 확인하는 용도다. **주문 집행 경로는 아니다** — 자세한 이유와 설정,
+포트 충돌 주의사항은 [docs/KIS-MCP.md](docs/KIS-MCP.md) 참고.
 
 ## 구조
 

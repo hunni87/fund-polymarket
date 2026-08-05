@@ -75,9 +75,8 @@ class KISBroker:
     # ------------------------------------------------------------------ 주문
 
     def _order_tr_id(self, side: OrderSide) -> str:
-        if self.env == "live":
-            return K.TR_ORDER_BUY_LIVE if side == OrderSide.BUY else K.TR_ORDER_SELL_LIVE
-        return K.TR_ORDER_BUY_PAPER if side == OrderSide.BUY else K.TR_ORDER_SELL_PAPER
+        live = K.TR_ORDER_BUY if side == OrderSide.BUY else K.TR_ORDER_SELL
+        return K.resolve_tr_id(live, self.env)
 
     def place_order(self, request: OrderRequest) -> OrderResult:
         if request.quantity <= 0:
@@ -125,10 +124,9 @@ class KISBroker:
     # ------------------------------------------------------------------ 잔고
 
     def get_balance(self) -> BalanceSnapshot:
-        tr_id = K.TR_BALANCE_LIVE if self.env == "live" else K.TR_BALANCE_PAPER
         body = self._client.get(
             K.PATH_INQUIRE_BALANCE,
-            tr_id=tr_id,
+            tr_id=K.resolve_tr_id(K.TR_BALANCE, self.env),
             params={
                 "CANO": self._cano,
                 "ACNT_PRDT_CD": self._acnt_prdt_cd,

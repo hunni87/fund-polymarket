@@ -71,6 +71,7 @@ def execute_decision(
         side=side,
         quantity=decision.target_quantity,
         price=price,
+        order_type=order_type,
     )
     verdict = check_order(db, ctx, broker=broker)
 

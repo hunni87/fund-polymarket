@@ -13,6 +13,9 @@ os.environ.setdefault("DATABASE_URL", f"sqlite:///{_TMP_DB}")
 os.environ.setdefault("BROKER_BACKEND", "mock")
 os.environ.setdefault("SCHEDULER_ENABLED", "false")
 os.environ.setdefault("SECRET_KEY", "test-secret")
+# 장 운영시간 가드는 실행 시각에 따라 결과가 달라진다. 기본은 꺼두고,
+# 이 가드를 다루는 테스트에서만 명시적으로 켠다(test_market_hours.py).
+os.environ.setdefault("ENFORCE_MARKET_HOURS", "false")
 
 from sqlalchemy.orm import Session  # noqa: E402
 

@@ -15,9 +15,10 @@ from sqlalchemy.orm import Session
 
 from app.brokers.base import Broker
 from app.core.config import settings
-from app.core.enums import OrderSide, OrderStatus
+from app.core.enums import OrderSide, OrderStatus, OrderType
 from app.models.fund import Position
 from app.models.trade import Order
+from app.services import market_hours
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,8 @@ class RiskContext:
     quantity: int
     price: Decimal
     """지정가, 또는 시장가 주문의 예상 체결가."""
+
+    order_type: OrderType = OrderType.LIMIT
 
     @property
     def notional(self) -> Decimal:
@@ -86,6 +89,13 @@ def check_order(db: Session, ctx: RiskContext, broker: Broker | None = None) -> 
             f"주문금액 {ctx.notional:,.0f}원이 1회 한도 "
             f"{settings.max_order_amount_krw:,.0f}원을 초과합니다."
         )
+
+    if settings.enforce_market_hours:
+        session = market_hours.current_session()
+        if not session.is_open:
+            reasons.append(f"{market_hours.describe(session)}입니다. 주문할 수 없습니다.")
+        elif ctx.order_type == OrderType.MARKET and not session.market_order_allowed:
+            reasons.append(f"{market_hours.describe(session)}에는 시장가 주문을 낼 수 없습니다.")
 
     daily = _daily_order_count(db, ctx.fund_id)
     if daily >= settings.max_daily_orders:

@@ -1,8 +1,13 @@
-"""한국투자증권 Open API 상수.
+"""한국투자증권 Open API 상수와 거래ID 파생 규칙.
 
-주의: KIS는 거래ID(tr_id)와 엔드포인트를 종종 개편한다. 실계좌를 붙이기 전에
-반드시 KIS 개발자센터 문서에서 아래 값을 대조하고, 필요하면 환경변수로 덮어써라
-(KIS_TR_ID_* 참고).
+거래ID(tr_id)는 **실전 값만** 관리한다. 모의투자 값은 `to_paper_tr_id`가 규칙으로
+파생한다 — 두 벌을 따로 들고 있으면 한쪽만 고치는 드리프트가 생긴다.
+
+파생 규칙의 출처는 KIS 공식 툴킷(koreainvestment/kis-ai-extensions,
+`shared/scripts/api_client.py`의 `_convert_tr_id`)이다.
+
+KIS는 거래ID를 종종 개편한다. 실계좌를 붙이기 전에 실전 값을 KIS 개발자센터 문서와
+대조하고, 필요하면 `KIS_TR_ID_*` 환경변수로 덮어써라(코드 배포 없이 대응 가능).
 """
 
 from __future__ import annotations
@@ -19,22 +24,43 @@ PATH_INQUIRE_PRICE = "/uapi/domestic-stock/v1/quotations/inquire-price"
 PATH_ORDER_CASH = "/uapi/domestic-stock/v1/trading/order-cash"
 PATH_INQUIRE_BALANCE = "/uapi/domestic-stock/v1/trading/inquire-balance"
 
-TR_INQUIRE_PRICE = "FHKST01010100"
-
 
 def _env(key: str, default: str) -> str:
     return os.getenv(key, default)
 
 
-# 국내주식 현금 주문. 실전/모의가 다른 tr_id를 쓴다.
-TR_ORDER_BUY_LIVE = _env("KIS_TR_ID_ORDER_BUY_LIVE", "TTTC0802U")
-TR_ORDER_SELL_LIVE = _env("KIS_TR_ID_ORDER_SELL_LIVE", "TTTC0801U")
-TR_ORDER_BUY_PAPER = _env("KIS_TR_ID_ORDER_BUY_PAPER", "VTTC0802U")
-TR_ORDER_SELL_PAPER = _env("KIS_TR_ID_ORDER_SELL_PAPER", "VTTC0801U")
+# --- 실전 거래ID. 모의 값은 아래 to_paper_tr_id 로 파생된다. ---
 
-# 주식 잔고 조회.
-TR_BALANCE_LIVE = _env("KIS_TR_ID_BALANCE_LIVE", "TTTC8434R")
-TR_BALANCE_PAPER = _env("KIS_TR_ID_BALANCE_PAPER", "VTTC8434R")
+TR_INQUIRE_PRICE = "FHKST01010100"
+"""국내주식 현재가 조회. 시세 조회는 실전/모의 구분이 없다(F로 시작 → 변환 대상 아님)."""
+
+TR_ORDER_BUY = _env("KIS_TR_ID_ORDER_BUY", "TTTC0802U")
+TR_ORDER_SELL = _env("KIS_TR_ID_ORDER_SELL", "TTTC0801U")
+TR_BALANCE = _env("KIS_TR_ID_BALANCE", "TTTC8434R")
+
+# 모의투자로 변환되는 거래ID 접두사. 시세성 거래ID(F...)는 변환하지 않는다.
+_PAPER_CONVERTIBLE_PREFIXES = ("T", "J", "C")
+
+
+def to_paper_tr_id(tr_id: str) -> str:
+    """실전 거래ID를 모의투자용으로 변환한다.
+
+    첫 글자가 T/J/C 면 V로 바꾼다. 그 외(예: 시세 조회 FHKST...)는 그대로 둔다.
+
+        >>> to_paper_tr_id("TTTC0802U")
+        'VTTC0802U'
+        >>> to_paper_tr_id("FHKST01010100")
+        'FHKST01010100'
+    """
+    if tr_id and tr_id[0] in _PAPER_CONVERTIBLE_PREFIXES:
+        return "V" + tr_id[1:]
+    return tr_id
+
+
+def resolve_tr_id(tr_id: str, env: str) -> str:
+    """실행 환경에 맞는 거래ID를 고른다. env는 'live' 또는 'paper'."""
+    return tr_id if env == "live" else to_paper_tr_id(tr_id)
+
 
 # 주문 구분(ORD_DVSN).
 ORD_DVSN_LIMIT = "00"  # 지정가

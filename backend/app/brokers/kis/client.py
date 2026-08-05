@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,35 @@ logger = logging.getLogger(__name__)
 
 # 토큰 만료 직전에 갱신하기 위한 여유분.
 _TOKEN_SKEW = timedelta(minutes=10)
+
+# KIS의 access_token_token_expired 는 KST 기준 "YYYY-MM-DD HH:MM:SS" 문자열이다.
+KST = timezone(timedelta(hours=9))
+
+
+def _parse_token_expiry(body: dict[str, Any]) -> datetime:
+    """토큰 만료 시각을 UTC로 구한다.
+
+    KIS는 `expires_in`(초)과 `access_token_token_expired`(KST 문자열)를 함께 준다.
+    타임존 해석 여지가 없는 `expires_in`을 우선하고, 없을 때만 문자열을 판다.
+    둘 다 없으면 24시간으로 잡는다(KIS 토큰의 공칭 수명).
+    """
+    expires_in = body.get("expires_in")
+    if expires_in is not None:
+        try:
+            return datetime.now(UTC) + timedelta(seconds=int(expires_in))
+        except (TypeError, ValueError):
+            logger.warning("expires_in 을 해석하지 못했습니다: %r", expires_in)
+
+    raw = body.get("access_token_token_expired")
+    if raw:
+        try:
+            return datetime.strptime(str(raw), "%Y-%m-%d %H:%M:%S").replace(
+                tzinfo=KST
+            ).astimezone(UTC)
+        except ValueError:
+            logger.warning("access_token_token_expired 를 해석하지 못했습니다: %r", raw)
+
+    return datetime.now(UTC) + timedelta(hours=24)
 
 
 class KISClient:
@@ -123,8 +152,7 @@ class KISClient:
             if not token:
                 raise BrokerError(f"KIS 접근토큰 응답이 비정상입니다: {body}")
 
-            expires_in = int(body.get("expires_in", 60 * 60 * 24))
-            expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
+            expires_at = _parse_token_expiry(body)
             self._token = token
             self._token_expires_at = expires_at
             self._store_cached_token(token, expires_at)

@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     kill_switch: bool = False
     """True면 어떤 주문도 브로커로 나가지 않는다."""
 
+    enforce_market_hours: bool = True
+    """장 운영시간 밖 주문을 미리 차단한다. 휴장일은 판단하지 못하므로 KIS가 최종 판단한다."""
+
     # --- 한국투자증권(KIS) ---
     kis_env: KISEnv = "paper"
     kis_app_key: str = ""
