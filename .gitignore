@@ -1,0 +1,29 @@
+# 비밀
+.env
+.env.local
+*.pem
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# 에디터/OS
+.DS_Store
+.idea/
+.vscode/
