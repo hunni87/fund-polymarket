@@ -4,6 +4,7 @@ from app.models.fund import Fund, Position
 from app.models.ledger import LedgerEntry
 from app.models.market import Bet, Market
 from app.models.member import Member
+from app.models.symbol import Symbol
 from app.models.trade import Order, TradeDecision
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "Member",
     "Order",
     "Position",
+    "Symbol",
     "TradeDecision",
 ]

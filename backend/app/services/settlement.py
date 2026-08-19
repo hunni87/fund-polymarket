@@ -19,7 +19,7 @@ from app.core.config import settings
 from app.core.enums import LedgerEntryType, MarketStatus, Outcome
 from app.core.errors import ConflictError
 from app.models.market import Bet, Market
-from app.services import ledger_service
+from app.services import ledger_service, notifications
 from app.services.consensus import Stake, resolve_outcome, settle_parimutuel
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,7 @@ def settle_market(db: Session, market: Market) -> dict[int, Decimal]:
     db.flush()
 
     logger.info("마켓 #%s 정산 완료. 수령자 %d명", market.id, len(payouts))
+    notifications.market_settled(market, payouts)
     return payouts
 
 

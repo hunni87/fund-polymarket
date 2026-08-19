@@ -6,6 +6,7 @@ import { LeaderboardPage } from './pages/Leaderboard'
 import { LoginPage } from './pages/Login'
 import { MarketDetailPage } from './pages/MarketDetail'
 import { MarketsPage } from './pages/Markets'
+import { NewMarketPage } from './pages/NewMarket'
 import { OrdersPage } from './pages/Orders'
 
 /** 지금 실계좌로 나가는 상태인지 항상 눈에 보이게 한다. */
@@ -48,6 +49,7 @@ export function App() {
           </NavLink>
           <NavLink to="/leaderboard">순위</NavLink>
           <NavLink to="/orders">주문</NavLink>
+          {member.role === 'admin' && <NavLink to="/admin/markets/new">마켓 개설</NavLink>}
         </nav>
         <span className="spacer" />
         <span className="muted">
@@ -63,6 +65,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<MarketsPage />} />
         <Route path="/markets/:id" element={<MarketDetailPage />} />
+        <Route path="/admin/markets/new" element={<NewMarketPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

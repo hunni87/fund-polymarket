@@ -21,9 +21,27 @@ from app.db.session import engine, session_scope
 from app.models.fund import Fund
 from app.models.market import Market
 from app.models.member import Member
-from app.services import ledger_service
+from app.services import ledger_service, symbols
 
 DEFAULT_PASSWORD = "changeme123"
+
+# 자동완성이 빈 화면이 아니게 하려고 넣는 **개발용 예시**다. 상장 목록 전체는
+# `python -m scripts.import_symbols <csv>` 로 넣는다. 여기 이름이 낡았더라도
+# 관리자가 시세를 한 번 조회하면 증권사가 준 정식 이름으로 교정된다.
+SAMPLE_SYMBOLS = [
+    ("005930", "삼성전자", "KOSPI"),
+    ("000660", "SK하이닉스", "KOSPI"),
+    ("373220", "LG에너지솔루션", "KOSPI"),
+    ("207940", "삼성바이오로직스", "KOSPI"),
+    ("005380", "현대차", "KOSPI"),
+    ("000270", "기아", "KOSPI"),
+    ("035420", "NAVER", "KOSPI"),
+    ("035720", "카카오", "KOSPI"),
+    ("051910", "LG화학", "KOSPI"),
+    ("068270", "셀트리온", "KOSPI"),
+    ("247540", "에코프로비엠", "KOSDAQ"),
+    ("091990", "셀트리온헬스케어", "KOSDAQ"),
+]
 
 MEMBERS = [
     ("admin@study.local", "운영자", Role.ADMIN),
@@ -68,6 +86,10 @@ def main() -> None:
             if role == Role.ADMIN:
                 admin_id = member.id
             print(f"  회원 생성: {name} <{email}>")
+
+        for ticker, name, market in SAMPLE_SYMBOLS:
+            symbols.upsert(db, ticker=ticker, name=name, market=market)
+        print(f"  종목 마스터 예시 {len(SAMPLE_SYMBOLS)}건")
 
         fund = db.scalar(select(Fund))
         if fund is None:

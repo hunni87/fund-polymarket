@@ -111,6 +111,14 @@ a {
   flex-wrap: wrap;
 }
 
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .badge {
   font-size: 11px;
   padding: 2px 8px;
@@ -278,4 +286,68 @@ th.num {
   margin-bottom: 4px;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* --- 마켓 개설 폼 --- */
+.form label {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.form label > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.form label small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ticker-picker .row {
+  flex-wrap: nowrap;
+}
+
+.ticker-picker .row button {
+  white-space: nowrap;
+}
+
+/* 자동완성 목록. 겹쳐 띄우지 않고 아래로 민다 —
+   폼 하나뿐이라 레이아웃이 튀어도 읽기가 더 낫다. */
+.suggestions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.suggestions li + li {
+  border-top: 1px solid var(--border);
+}
+
+.suggestions button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+  background: var(--surface-2);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.suggestions button:hover {
+  background: var(--surface);
 }

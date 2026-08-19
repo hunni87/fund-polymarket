@@ -122,6 +122,17 @@ export interface Order {
   filled_avg_price: string | null
   error_message: string | null
   created_at: string
+  submitted_at: string | null
+  filled_at: string | null
+  last_synced_at: string | null
+}
+
+export interface OrderSyncResult {
+  checked: number
+  updated: number[]
+  unchanged: number[]
+  failed: number[]
+  resynced_funds: number[]
 }
 
 export interface Score {
@@ -144,4 +155,30 @@ export interface SystemStatus {
   max_daily_orders: number
   execution_min_probability: string
   quorum_ratio: string
+}
+
+export interface Symbol {
+  ticker: string
+  name: string
+  market: string | null
+}
+
+export interface Quote {
+  ticker: string
+  name: string | null
+  price: string
+  prev_close: string | null
+}
+
+export interface MarketCreate {
+  fund_id: number
+  title: string
+  ticker: string
+  ticker_name?: string | null
+  description?: string | null
+  closes_at: string
+  resolve_at: string
+  notional_krw: string
+  buy_threshold_pct?: string | null
+  sell_threshold_pct?: string | null
 }

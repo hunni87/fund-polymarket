@@ -9,8 +9,8 @@ from app.core.errors import NotFoundError
 from app.models.fund import Fund, Position
 from app.models.trade import Order
 from app.schemas.common import FundCreate, FundOut, PositionOut
-from app.schemas.market import DecisionOut, OrderOut, RejectRequest
-from app.services import execution
+from app.schemas.market import DecisionOut, OrderOut, OrderSyncOut, RejectRequest
+from app.services import execution, fills
 
 router = APIRouter(tags=["trading"])
 
@@ -57,6 +57,17 @@ def list_orders(db: DbSession, _: CurrentMember, limit: int = 50) -> list[Order]
     return list(
         db.scalars(select(Order).order_by(Order.id.desc()).limit(min(limit, 200))).all()
     )
+
+
+@router.post("/orders/sync", response_model=OrderSyncOut)
+def sync_orders(db: DbSession, broker: BrokerDep, _: CurrentAdmin, fund_id: int | None = None):
+    """미체결 주문의 체결 현황을 증권사에서 다시 읽어온다.
+
+    스케줄러가 주기적으로 하는 일과 같다. 승인 직후 결과를 바로 보고 싶을 때 쓴다.
+    """
+    result = fills.sync_open_orders(db, broker, fund_id=fund_id)
+    db.commit()
+    return result
 
 
 @router.get("/funds/{fund_id}/positions", response_model=list[PositionOut])

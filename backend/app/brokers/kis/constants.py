@@ -23,6 +23,7 @@ PATH_HASHKEY = "/uapi/hashkey"
 PATH_INQUIRE_PRICE = "/uapi/domestic-stock/v1/quotations/inquire-price"
 PATH_ORDER_CASH = "/uapi/domestic-stock/v1/trading/order-cash"
 PATH_INQUIRE_BALANCE = "/uapi/domestic-stock/v1/trading/inquire-balance"
+PATH_INQUIRE_DAILY_CCLD = "/uapi/domestic-stock/v1/trading/inquire-daily-ccld"
 
 
 def _env(key: str, default: str) -> str:
@@ -37,6 +38,10 @@ TR_INQUIRE_PRICE = "FHKST01010100"
 TR_ORDER_BUY = _env("KIS_TR_ID_ORDER_BUY", "TTTC0802U")
 TR_ORDER_SELL = _env("KIS_TR_ID_ORDER_SELL", "TTTC0801U")
 TR_BALANCE = _env("KIS_TR_ID_BALANCE", "TTTC8434R")
+
+TR_DAILY_CCLD = _env("KIS_TR_ID_DAILY_CCLD", "TTTC8001R")
+"""주식일별주문체결조회(3개월 이내). 3개월 이전은 CTSC9115R 로 별도 거래ID를 쓰지만,
+접수 당일 체결을 확인하는 용도라 여기서는 다루지 않는다."""
 
 # 모의투자로 변환되는 거래ID 접두사. 시세성 거래ID(F...)는 변환하지 않는다.
 _PAPER_CONVERTIBLE_PREFIXES = ("T", "J", "C")
@@ -68,5 +73,10 @@ ORD_DVSN_MARKET = "01"  # 시장가
 
 # 시장 구분(FID_COND_MRKT_DIV_CODE).
 MARKET_DIV_STOCK = "J"
+
+# 주문체결조회 파라미터.
+SLL_BUY_DVSN_ALL = "00"  # 매도·매수 전체
+CCLD_DVSN_ALL = "00"  # 체결·미체결 전체
+CCLD_INQR_DVSN_REVERSE = "00"  # 역순 조회
 
 RT_CD_SUCCESS = "0"

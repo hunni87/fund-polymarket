@@ -193,3 +193,85 @@ def test_system_status_reports_trading_mode(
     body = client.get("/api/v1/system/status", headers=admin_headers).json()
     assert body["live_trading_enabled"] is False
     assert body["broker_backend"] == "mock"
+
+
+def test_order_sync_requires_admin(db: Session, client: TestClient) -> None:
+    make_member(db, "bob")
+    db.commit()
+    headers = login(client, "bob@test.local")
+    assert client.post("/api/v1/orders/sync", headers=headers).status_code == 403
+
+
+def test_order_sync_reports_what_it_checked(
+    db: Session, client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    """미체결 주문이 없어도 결과 형태는 같아야 한다 — UI가 분기하지 않도록."""
+    res = client.post("/api/v1/orders/sync", headers=admin_headers)
+    assert res.status_code == 200, res.text
+    assert res.json() == {
+        "checked": 0,
+        "updated": [],
+        "unchanged": [],
+        "failed": [],
+        "resynced_funds": [],
+    }
+
+
+class TestSymbolApi:
+    def test_search_requires_login(self, client: TestClient) -> None:
+        assert client.get("/api/v1/symbols?q=005").status_code == 401
+
+    def test_members_can_search(self, db: Session, client: TestClient) -> None:
+        from app.services import symbols
+
+        make_member(db, "carol")
+        symbols.upsert(db, ticker="005930", name="삼성전자", market="KOSPI")
+        db.commit()
+
+        res = client.get("/api/v1/symbols?q=삼성", headers=login(client, "carol@test.local"))
+        assert res.status_code == 200
+        assert res.json() == [{"ticker": "005930", "name": "삼성전자", "market": "KOSPI"}]
+
+    def test_quote_lookup_is_admin_only(self, db: Session, client: TestClient) -> None:
+        """시세 조회는 증권사 API를 호출한다. 아무나 두드리게 두지 않는다."""
+        make_member(db, "dave")
+        db.commit()
+        headers = login(client, "dave@test.local")
+        assert client.get("/api/v1/symbols/005930/quote", headers=headers).status_code == 403
+
+    def test_quote_lookup_returns_price_and_records_the_symbol(
+        self, client: TestClient, admin_headers: dict[str, str]
+    ) -> None:
+        res = client.get("/api/v1/symbols/005930/quote", headers=admin_headers)
+        assert res.status_code == 200, res.text
+        assert res.json()["price"] == "70000"
+
+        # 마스터에 없던 종목이라도 조회 결과는 돌아온다.
+        assert res.json()["ticker"] == "005930"
+
+    def test_market_creation_fills_the_name_from_the_master(
+        self, db: Session, client: TestClient, admin_headers: dict[str, str]
+    ) -> None:
+        from app.models.fund import Fund
+        from app.services import symbols
+
+        fund = Fund(name="펀드", account_no="12345678")
+        db.add(fund)
+        symbols.upsert(db, ticker="005930", name="삼성전자", market="KOSPI")
+        db.commit()
+
+        now = datetime.now(UTC)
+        res = client.post(
+            "/api/v1/markets",
+            headers=admin_headers,
+            json={
+                "fund_id": fund.id,
+                "title": "삼성전자 — 이번 주 액션은?",
+                "ticker": "005930",
+                "closes_at": (now + timedelta(hours=1)).isoformat(),
+                "resolve_at": (now + timedelta(days=5)).isoformat(),
+                "notional_krw": "500000",
+            },
+        )
+        assert res.status_code == 201, res.text
+        assert res.json()["ticker_name"] == "삼성전자"

@@ -54,6 +54,9 @@ class Market(Base, TimestampMixin):
     notional_krw: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     """BUY로 결정됐을 때 집행할 목표 금액."""
 
+    closing_soon_notified_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    """마감 임박 알림을 보낸 시각. 매 tick 마다 같은 알림이 반복되는 것을 막는다."""
+
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     settled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)

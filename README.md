@@ -5,8 +5,9 @@
 
 ## 어떻게 동작하나
 
-1. **주제 개설** — 운영자가 종목과 마감/판정 시각을 정해 마켓을 연다.
-   (예: "삼성전자 — 이번 주 액션은?")
+1. **주제 개설** — 운영자가 웹에서 종목과 마감/판정 시각을 정해 마켓을 연다.
+   (예: "삼성전자 — 이번 주 액션은?") 종목은 이름으로 찾을 수 있고, 열기 전에
+   증권사 시세로 실재 여부와 현재가를 확인한다.
 2. **베팅** — 스터디원 각자가 보유 포인트를 `매수/매도/홀딩`에 배분한다. 확신하면
    몰아서, 애매하면 나눠서 건다. 마감 전에는 몇 번이든 다시 낼 수 있고, 마감 전까지는
    **남의 베팅 내역이 보이지 않는다**(집계 확률만 공개).
@@ -15,7 +16,8 @@
 4. **매매 결정** — 마감되면 1등 결과가 매매 액션이 된다. 단 **정족수**(9명 중 6명 이상
    참여)와 **집행 기준 확률**(1등이 55% 이상)을 넘어야 하고, 못 넘으면 SKIP한다.
 5. **승인 · 집행** — 리스크 가드를 통과한 주문만 브로커로 나간다. 승인은 **항상 사람이**
-   누른다. 자동 집행은 없다.
+   누른다. 자동 집행은 없다. 접수된 주문은 증권사에 체결 여부를 다시 물어서
+   체결 수량과 평균가를 채운다 — "냈다"와 "체결됐다"는 다른 사건이다.
 6. **판정 · 정산** — 판정 시각의 가격을 기준가와 비교해 정답을 가린다
    (기본: +3% 이상 → 매수 정답, −3% 이하 → 매도 정답, 그 사이 → 홀딩 정답).
    정답에 건 사람들이 전체 포인트 풀을 지분대로 나눠 갖는다(파리뮤추얼).
@@ -29,7 +31,8 @@
 make setup          # venv + npm install + .env 생성
 make db-up          # PostgreSQL 컨테이너
 make migrate        # 스키마 적용
-make seed           # 관리자 1명 + 스터디원 9명 + 예시 마켓
+make seed           # 관리자 1명 + 스터디원 9명 + 예시 마켓 + 종목 예시
+make symbols f=symbols.csv   # (선택) 상장 종목 마스터 임포트
 
 make dev-backend    # http://localhost:8000/docs
 make dev-frontend   # http://localhost:5173
@@ -90,11 +93,13 @@ backend/
     models/     Member, Fund, Position, Market, Bet, LedgerEntry, TradeDecision, Order
     schemas/    요청/응답 스키마
     api/v1/     auth, members, markets, trading
-    services/   consensus(순수 로직), market_service, execution, settlement, risk, scoring
+    services/   consensus(순수 로직), market_service, execution, fills, settlement,
+                risk, scoring, notifications, symbols
     brokers/    base(Protocol), mock, kis/(client, broker, constants), factory
+    notifiers/  base(Protocol), noop, slack, factory
     scheduler.py
 frontend/
-  src/          React + TypeScript (마켓, 베팅 UI, 순위, 주문 내역)
+  src/          React + TypeScript (마켓, 베팅 UI, 순위, 주문 내역, 마켓 개설)
 docs/
   ARCHITECTURE.md   설계 결정과 확장 지점
 ```
