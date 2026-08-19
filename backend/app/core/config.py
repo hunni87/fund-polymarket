@@ -93,6 +93,17 @@ class Settings(BaseSettings):
     broker_backend: Literal["kis", "mock"] = "mock"
     """mock은 브로커를 호출하지 않고 체결을 시뮬레이션한다(개발/테스트용)."""
 
+    # --- 알림 ---
+    slack_webhook_url: str = ""
+    """비어 있으면 알림을 보내지 않는다(noop). 알림은 없어도 서비스는 돌아간다."""
+
+    notify_timeout_seconds: float = 5.0
+    notify_closing_soon_minutes: int = 60
+    """마감 이 시간 전에 미참여자를 재촉하는 알림을 한 번 보낸다."""
+
+    web_base_url: str = "http://localhost:5173"
+    """알림에 넣을 링크의 기준 주소. 알림을 보고 바로 들어올 수 있어야 참여율이 오른다."""
+
     # --- 스케줄러 ---
     scheduler_enabled: bool = True
     scheduler_interval_seconds: int = 60

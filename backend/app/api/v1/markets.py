@@ -22,7 +22,7 @@ from app.schemas.market import (
     MarketDetailOut,
     MarketOut,
 )
-from app.services import market_service, settlement
+from app.services import market_service, notifications, settlement
 from app.services.consensus import Consensus
 
 router = APIRouter(prefix="/markets", tags=["markets"])
@@ -70,6 +70,8 @@ def create_market(payload: MarketCreate, db: DbSession, admin: CurrentAdmin) -> 
     db.add(market)
     db.commit()
     db.refresh(market)
+    # 커밋 후에 알린다 — 마켓 개설은 되돌아갈 일이 없어야 알림이 정직하다.
+    notifications.market_opened(market)
     return market
 
 

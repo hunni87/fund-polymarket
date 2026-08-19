@@ -24,7 +24,7 @@ from app.models.fund import Position
 from app.models.market import Bet, Market
 from app.models.member import Member
 from app.models.trade import TradeDecision
-from app.services import ledger_service
+from app.services import ledger_service, notifications
 from app.services.consensus import Consensus, Stake, compute_consensus
 
 logger = logging.getLogger(__name__)
@@ -242,4 +242,5 @@ def build_decision(db: Session, market: Market, broker: Broker) -> TradeDecision
     market.status = MarketStatus.DECIDED
     db.flush()
     logger.info("마켓 #%s 결정: %s (%s)", market.id, action, status)
+    notifications.decision_ready(market, decision)
     return decision

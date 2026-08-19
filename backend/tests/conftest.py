@@ -85,3 +85,17 @@ def fund(db: Session) -> Fund:
     db.add(f)
     db.flush()
     return f
+
+
+@pytest.fixture
+def sent_notifications(monkeypatch: pytest.MonkeyPatch) -> list:
+    """알림을 실제로 보내지 않고 모아둔다.
+
+    기본 설정(SLACK_WEBHOOK_URL 없음)에서도 noop 이라 네트워크는 안 타지만,
+    무엇이 나갔는지 검사하려면 잡아둘 곳이 필요하다.
+    """
+    from app.notifiers.noop import NoopNotifier
+
+    recorder = NoopNotifier()
+    monkeypatch.setattr("app.services.notifications.get_notifier", lambda: recorder)
+    return recorder.sent

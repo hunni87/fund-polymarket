@@ -91,8 +91,10 @@ backend/
     models/     Member, Fund, Position, Market, Bet, LedgerEntry, TradeDecision, Order
     schemas/    요청/응답 스키마
     api/v1/     auth, members, markets, trading
-    services/   consensus(순수 로직), market_service, execution, fills, settlement, risk, scoring
+    services/   consensus(순수 로직), market_service, execution, fills, settlement,
+                risk, scoring, notifications
     brokers/    base(Protocol), mock, kis/(client, broker, constants), factory
+    notifiers/  base(Protocol), noop, slack, factory
     scheduler.py
 frontend/
   src/          React + TypeScript (마켓, 베팅 UI, 순위, 주문 내역)

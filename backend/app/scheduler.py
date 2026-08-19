@@ -7,17 +7,19 @@
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.brokers.factory import get_broker
 from app.core.config import settings
 from app.core.enums import MarketStatus
 from app.db.session import session_scope
-from app.models.market import Market
-from app.services import fills, market_service, settlement
+from app.models.market import Bet, Market
+from app.models.member import Member
+from app.services import fills, market_service, notifications, settlement
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,13 @@ def tick() -> None:
             fills.sync_open_orders(db, broker)
         except Exception:
             logger.exception("체결 동기화 실패")
+            db.rollback()
+
+    with session_scope() as db:
+        try:
+            notify_closing_soon(db, now)
+        except Exception:
+            logger.exception("마감 임박 알림 실패")
             db.rollback()
 
     with session_scope() as db:
@@ -67,6 +76,35 @@ def tick() -> None:
             except Exception:
                 logger.exception("마켓 #%s 자동 판정/정산 실패", market.id)
                 db.rollback()
+
+
+def notify_closing_soon(db: Session, now: datetime) -> int:
+    """마감이 가까운 마켓에 대해 한 번만 재촉 알림을 보낸다.
+
+    보낸 시각을 마켓에 기록하는 이유는 스케줄러가 1분마다 돌기 때문이다. 기록하지
+    않으면 마감 전 한 시간 동안 60번 알림이 간다.
+    """
+    threshold = now + timedelta(minutes=settings.notify_closing_soon_minutes)
+    due = db.scalars(
+        select(Market).where(
+            Market.status == MarketStatus.OPEN,
+            Market.closes_at <= threshold,
+            Market.closes_at > now,
+            Market.closing_soon_notified_at.is_(None),
+        )
+    ).all()
+
+    active_count = len(db.scalars(select(Member.id).where(Member.is_active.is_(True))).all())
+    for market in due:
+        participants = len(
+            set(db.scalars(select(Bet.member_id).where(Bet.market_id == market.id)).all())
+        )
+        notifications.closing_soon(market, missing=max(0, active_count - participants))
+        market.closing_soon_notified_at = now
+
+    # 세션은 autoflush=False 다. 여기서 밀지 않으면 다음 tick 이 같은 마켓을 다시 집는다.
+    db.flush()
+    return len(due)
 
 
 def start() -> None:
