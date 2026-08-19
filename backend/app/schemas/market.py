@@ -133,3 +133,16 @@ class OrderOut(ORMModel):
     filled_avg_price: Decimal | None
     error_message: str | None
     created_at: datetime
+    submitted_at: datetime | None
+    filled_at: datetime | None
+    last_synced_at: datetime | None
+
+
+class OrderSyncOut(BaseModel):
+    """체결 동기화 결과. 무엇을 확인했고 무엇이 바뀌었는지."""
+
+    checked: int
+    updated: list[int]
+    unchanged: list[int]
+    failed: list[int]
+    resynced_funds: list[int]

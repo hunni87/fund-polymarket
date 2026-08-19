@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.core.enums import MarketStatus
 from app.db.session import session_scope
 from app.models.market import Market
-from app.services import market_service, settlement
+from app.services import fills, market_service, settlement
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,14 @@ def tick() -> None:
     """1분마다 실행. 시각이 지난 마켓을 다음 단계로 밀어준다."""
     now = datetime.now(UTC)
     broker = get_broker()
+
+    # 미체결 주문이 없으면 브로커를 호출조차 하지 않는다.
+    with session_scope() as db:
+        try:
+            fills.sync_open_orders(db, broker)
+        except Exception:
+            logger.exception("체결 동기화 실패")
+            db.rollback()
 
     with session_scope() as db:
         due_to_close = db.scalars(

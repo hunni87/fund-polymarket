@@ -193,3 +193,25 @@ def test_system_status_reports_trading_mode(
     body = client.get("/api/v1/system/status", headers=admin_headers).json()
     assert body["live_trading_enabled"] is False
     assert body["broker_backend"] == "mock"
+
+
+def test_order_sync_requires_admin(db: Session, client: TestClient) -> None:
+    make_member(db, "bob")
+    db.commit()
+    headers = login(client, "bob@test.local")
+    assert client.post("/api/v1/orders/sync", headers=headers).status_code == 403
+
+
+def test_order_sync_reports_what_it_checked(
+    db: Session, client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    """미체결 주문이 없어도 결과 형태는 같아야 한다 — UI가 분기하지 않도록."""
+    res = client.post("/api/v1/orders/sync", headers=admin_headers)
+    assert res.status_code == 200, res.text
+    assert res.json() == {
+        "checked": 0,
+        "updated": [],
+        "unchanged": [],
+        "failed": [],
+        "resynced_funds": [],
+    }

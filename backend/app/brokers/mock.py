@@ -3,17 +3,30 @@
 from __future__ import annotations
 
 import itertools
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
 from app.brokers.base import (
     BalanceSnapshot,
     HoldingItem,
+    OrderExecution,
     OrderRequest,
     OrderResult,
     Quote,
 )
 
 _counter = itertools.count(1)
+
+
+@dataclass
+class _MockOrder:
+    """모의 브로커가 기억하는 주문 1건. 기본은 즉시 전량 체결."""
+
+    request: OrderRequest
+    fill_price: Decimal
+    filled_quantity: int
+    cancelled: bool = False
 
 
 class MockBroker:
@@ -30,6 +43,7 @@ class MockBroker:
         self._default_price = default_price
         self._cash = cash_krw
         self._holdings: dict[str, HoldingItem] = {}
+        self._orders: dict[str, _MockOrder] = {}
         self.submitted: list[OrderRequest] = []
 
     def set_price(self, ticker: str, price: Decimal) -> None:
@@ -68,6 +82,10 @@ class MockBroker:
                 )
             self._cash += fill_price * request.quantity
 
+        self._orders[order_no] = _MockOrder(
+            request=request, fill_price=fill_price, filled_quantity=request.quantity
+        )
+
         return OrderResult(
             accepted=True,
             broker_order_no=order_no,
@@ -84,3 +102,31 @@ class MockBroker:
 
     def get_balance(self) -> BalanceSnapshot:
         return BalanceSnapshot(cash_krw=self._cash, holdings=list(self._holdings.values()))
+
+    # ------------------------------------------------------------------ 체결
+
+    def get_order_status(
+        self, broker_order_no: str, *, ordered_at: datetime
+    ) -> OrderExecution | None:
+        order = self._orders.get(broker_order_no)
+        if order is None:
+            return None
+        return OrderExecution(
+            broker_order_no=broker_order_no,
+            ordered_quantity=order.request.quantity,
+            filled_quantity=order.filled_quantity,
+            filled_avg_price=order.fill_price if order.filled_quantity else None,
+            remaining_quantity=order.request.quantity - order.filled_quantity,
+            cancelled=order.cancelled,
+            raw={"mock": True},
+        )
+
+    # --- 테스트에서 부분체결/취소 시나리오를 만들기 위한 훅 ---
+
+    def set_fill(self, broker_order_no: str, filled_quantity: int) -> None:
+        """이미 낸 주문의 체결 수량을 바꾼다. 잔고는 건드리지 않는다."""
+        order = self._orders[broker_order_no]
+        order.filled_quantity = max(0, min(filled_quantity, order.request.quantity))
+
+    def cancel(self, broker_order_no: str) -> None:
+        self._orders[broker_order_no].cancelled = True

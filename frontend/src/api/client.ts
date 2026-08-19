@@ -5,6 +5,7 @@ import type {
   MarketDetail,
   Member,
   Order,
+  OrderSyncResult,
   Outcome,
   Score,
   SystemStatus,
@@ -114,4 +115,5 @@ export const api = {
     }),
 
   orders: () => request<Order[]>('/orders'),
+  syncOrders: () => request<OrderSyncResult>('/orders/sync', { method: 'POST' }),
 }

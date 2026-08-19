@@ -83,3 +83,8 @@ class Order(Base, TimestampMixin):
     error_message: Mapped[str | None] = mapped_column(Text)
 
     submitted_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    filled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    """전량 체결이 확인된 시각. 접수(submitted_at)와는 다른 사건이라 따로 남긴다."""
+
+    last_synced_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    """증권사에 체결 현황을 마지막으로 물어본 시각. 조회가 멈춘 것을 알아채기 위함."""

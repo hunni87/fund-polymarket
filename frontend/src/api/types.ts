@@ -122,6 +122,17 @@ export interface Order {
   filled_avg_price: string | null
   error_message: string | null
   created_at: string
+  submitted_at: string | null
+  filled_at: string | null
+  last_synced_at: string | null
+}
+
+export interface OrderSyncResult {
+  checked: number
+  updated: number[]
+  unchanged: number[]
+  failed: number[]
+  resynced_funds: number[]
 }
 
 export interface Score {

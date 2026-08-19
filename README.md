@@ -15,7 +15,8 @@
 4. **매매 결정** — 마감되면 1등 결과가 매매 액션이 된다. 단 **정족수**(9명 중 6명 이상
    참여)와 **집행 기준 확률**(1등이 55% 이상)을 넘어야 하고, 못 넘으면 SKIP한다.
 5. **승인 · 집행** — 리스크 가드를 통과한 주문만 브로커로 나간다. 승인은 **항상 사람이**
-   누른다. 자동 집행은 없다.
+   누른다. 자동 집행은 없다. 접수된 주문은 증권사에 체결 여부를 다시 물어서
+   체결 수량과 평균가를 채운다 — "냈다"와 "체결됐다"는 다른 사건이다.
 6. **판정 · 정산** — 판정 시각의 가격을 기준가와 비교해 정답을 가린다
    (기본: +3% 이상 → 매수 정답, −3% 이하 → 매도 정답, 그 사이 → 홀딩 정답).
    정답에 건 사람들이 전체 포인트 풀을 지분대로 나눠 갖는다(파리뮤추얼).
@@ -90,7 +91,7 @@ backend/
     models/     Member, Fund, Position, Market, Bet, LedgerEntry, TradeDecision, Order
     schemas/    요청/응답 스키마
     api/v1/     auth, members, markets, trading
-    services/   consensus(순수 로직), market_service, execution, settlement, risk, scoring
+    services/   consensus(순수 로직), market_service, execution, fills, settlement, risk, scoring
     brokers/    base(Protocol), mock, kis/(client, broker, constants), factory
     scheduler.py
 frontend/
