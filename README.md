@@ -5,8 +5,9 @@
 
 ## 어떻게 동작하나
 
-1. **주제 개설** — 운영자가 종목과 마감/판정 시각을 정해 마켓을 연다.
-   (예: "삼성전자 — 이번 주 액션은?")
+1. **주제 개설** — 운영자가 웹에서 종목과 마감/판정 시각을 정해 마켓을 연다.
+   (예: "삼성전자 — 이번 주 액션은?") 종목은 이름으로 찾을 수 있고, 열기 전에
+   증권사 시세로 실재 여부와 현재가를 확인한다.
 2. **베팅** — 스터디원 각자가 보유 포인트를 `매수/매도/홀딩`에 배분한다. 확신하면
    몰아서, 애매하면 나눠서 건다. 마감 전에는 몇 번이든 다시 낼 수 있고, 마감 전까지는
    **남의 베팅 내역이 보이지 않는다**(집계 확률만 공개).
@@ -30,7 +31,8 @@
 make setup          # venv + npm install + .env 생성
 make db-up          # PostgreSQL 컨테이너
 make migrate        # 스키마 적용
-make seed           # 관리자 1명 + 스터디원 9명 + 예시 마켓
+make seed           # 관리자 1명 + 스터디원 9명 + 예시 마켓 + 종목 예시
+make symbols f=symbols.csv   # (선택) 상장 종목 마스터 임포트
 
 make dev-backend    # http://localhost:8000/docs
 make dev-frontend   # http://localhost:5173
@@ -92,12 +94,12 @@ backend/
     schemas/    요청/응답 스키마
     api/v1/     auth, members, markets, trading
     services/   consensus(순수 로직), market_service, execution, fills, settlement,
-                risk, scoring, notifications
+                risk, scoring, notifications, symbols
     brokers/    base(Protocol), mock, kis/(client, broker, constants), factory
     notifiers/  base(Protocol), noop, slack, factory
     scheduler.py
 frontend/
-  src/          React + TypeScript (마켓, 베팅 UI, 순위, 주문 내역)
+  src/          React + TypeScript (마켓, 베팅 UI, 순위, 주문 내역, 마켓 개설)
 docs/
   ARCHITECTURE.md   설계 결정과 확장 지점
 ```

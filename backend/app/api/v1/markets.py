@@ -22,7 +22,7 @@ from app.schemas.market import (
     MarketDetailOut,
     MarketOut,
 )
-from app.services import market_service, notifications, settlement
+from app.services import market_service, notifications, settlement, symbols
 from app.services.consensus import Consensus
 
 router = APIRouter(prefix="/markets", tags=["markets"])
@@ -45,13 +45,15 @@ def create_market(payload: MarketCreate, db: DbSession, admin: CurrentAdmin) -> 
     if fund is None:
         raise NotFoundError(f"펀드 {payload.fund_id}을(를) 찾을 수 없습니다.")
 
+    # 이름을 안 주면 종목 마스터에서 채운다. 마감 때 시세 조회로 한 번 더 교정된다.
+    known = symbols.get(db, payload.ticker)
     market = Market(
         fund_id=fund.id,
         created_by=admin.id,
         title=payload.title,
         description=payload.description,
         ticker=payload.ticker,
-        ticker_name=payload.ticker_name,
+        ticker_name=payload.ticker_name or (known.name if known else None),
         status=MarketStatus.OPEN,
         closes_at=payload.closes_at,
         resolve_at=payload.resolve_at,

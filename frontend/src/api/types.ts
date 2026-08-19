@@ -156,3 +156,29 @@ export interface SystemStatus {
   execution_min_probability: string
   quorum_ratio: string
 }
+
+export interface Symbol {
+  ticker: string
+  name: string
+  market: string | null
+}
+
+export interface Quote {
+  ticker: string
+  name: string | null
+  price: string
+  prev_close: string | null
+}
+
+export interface MarketCreate {
+  fund_id: number
+  title: string
+  ticker: string
+  ticker_name?: string | null
+  description?: string | null
+  closes_at: string
+  resolve_at: string
+  notional_krw: string
+  buy_threshold_pct?: string | null
+  sell_threshold_pct?: string | null
+}

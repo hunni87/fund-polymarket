@@ -36,10 +36,12 @@ class MockBroker:
         self,
         *,
         prices: dict[str, Decimal] | None = None,
+        names: dict[str, str] | None = None,
         default_price: Decimal = Decimal("70000"),
         cash_krw: Decimal = Decimal("10000000"),
     ) -> None:
         self._prices = prices or {}
+        self._names = names or {}
         self._default_price = default_price
         self._cash = cash_krw
         self._holdings: dict[str, HoldingItem] = {}
@@ -51,7 +53,9 @@ class MockBroker:
 
     def get_quote(self, ticker: str) -> Quote:
         price = self._prices.get(ticker, self._default_price)
-        return Quote(ticker=ticker, price=price, name=f"MOCK-{ticker}")
+        # 이름은 아는 것만 돌려준다. 지어낸 이름("MOCK-005930")을 흘리면 종목
+        # 마스터가 그걸 정식 명칭으로 알고 덮어쓴다.
+        return Quote(ticker=ticker, price=price, name=self._names.get(ticker))
 
     def place_order(self, request: OrderRequest) -> OrderResult:
         self.submitted.append(request)

@@ -83,3 +83,16 @@ class ScoreOut(BaseModel):
     hits: int
     hit_rate: Decimal
     brier: Decimal | None
+
+
+class SymbolOut(ORMModel):
+    ticker: str
+    name: str
+    market: str | None
+
+
+class QuoteOut(BaseModel):
+    ticker: str
+    name: str | None
+    price: Decimal
+    prev_close: Decimal | None

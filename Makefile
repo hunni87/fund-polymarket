@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down migrate revision seed dev-backend dev-frontend test lint build
+.PHONY: help setup db-up db-down migrate revision seed symbols dev-backend dev-frontend test lint build
 
 help:
 	@echo "setup         백엔드 venv + 프론트엔드 의존성 설치"
@@ -7,6 +7,7 @@ help:
 	@echo "migrate       DB 마이그레이션 적용"
 	@echo "revision      모델 변경으로부터 마이그레이션 생성 (m=\"메시지\")"
 	@echo "seed          개발용 초기 데이터 생성 (관리자1 + 스터디원9 + 예시 마켓)"
+	@echo "symbols       종목 마스터 CSV 임포트 (f=\"symbols.csv\")"
 	@echo "dev-backend   백엔드 개발 서버 (http://localhost:8000/docs)"
 	@echo "dev-frontend  프론트엔드 개발 서버 (http://localhost:5173)"
 	@echo "test          백엔드 테스트"
@@ -32,6 +33,9 @@ revision:
 
 seed:
 	cd backend && .venv/bin/python -m scripts.seed
+
+symbols:
+	cd backend && .venv/bin/python -m scripts.import_symbols $(f)
 
 dev-backend:
 	cd backend && .venv/bin/uvicorn app.main:app --reload --port 8000

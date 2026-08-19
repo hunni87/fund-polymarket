@@ -191,6 +191,30 @@ KIS 공식 툴킷이며, 자세한 대조 내역은 [KIS-MCP.md](KIS-MCP.md)에 
 아주 작다고 보고, 세션 이벤트를 얽는 비용을 피했다. 문제가 되면 `session_scope`의
 after_commit 훅으로 옮기면 된다.
 
+## 종목 마스터
+
+마켓을 열 때 티커를 외워서 치게 하지 않으려면 로컬에 종목 목록이 있어야 한다.
+**KIS에는 "이름으로 종목 찾기" API가 없기 때문이다** — 티커로 조회하는 것만 된다.
+
+`symbols` 표는 두 경로로 채워진다:
+
+1. **CSV 임포트** — `python -m scripts.import_symbols <csv>`. 상장 목록 전체를
+   한 번에. KRX 정보데이터시스템에서 받은 엑셀을 `ticker,name,market` 세 컬럼으로
+   저장하면 된다.
+2. **시세 조회** — 관리자가 마켓 개설 화면에서 티커를 확인할 때마다, 증권사가 준
+   정식 이름이 마스터에 반영된다. 임포트한 이름이 낡았어도 여기서 교정된다.
+
+즉 **임포트하지 않아도 서비스는 돌아간다.** 쓸수록 채워지고, 처음 한 번만 티커를
+알면 된다.
+
+관련해서 `MockBroker`는 **모르는 종목의 이름을 지어내지 않는다.** 예전에는
+`MOCK-005930` 같은 문자열을 돌려줬는데, 그러면 개발 중 시세 조회 한 번에 종목
+마스터의 "삼성전자"가 그 문자열로 덮어써진다. 모의 데이터가 마스터를 오염시키는
+경로는 막아둔다.
+
+상장폐지 종목은 지우지 않고 `is_active=false`로 감춘다. 지난 마켓이 그 티커를
+참조하고 있을 수 있다.
+
 ## 시간 처리
 
 `app/db/types.py`의 `UTCDateTime`이 모든 시각 컬럼을 tz-aware UTC로 통일한다.
@@ -207,13 +231,11 @@ SQLite는 타임존을 저장하지 못해서 naive datetime을 돌려주는데,
 1. **영업일/휴장일 캘린더** — `resolve_at`을 지금은 달력 날짜로 잡는다. 휴장일을 넘기면
    판정가가 직전 종가가 된다. `services/market_hours.py`도 주말만 거르고 공휴일은
    모른다. KRX 영업일 캘린더 하나로 두 문제가 같이 풀린다.
-2. **종목 검색** — 티커를 직접 입력해야 한다. KIS 종목 마스터를 받아 자동완성을 붙이면
-   마켓 개설이 훨씬 쉬워진다.
-3. **감사 로그** — 누가 언제 무엇을 승인했는지는 `trade_decisions.approved_by`에만
+2. **감사 로그** — 누가 언제 무엇을 승인했는지는 `trade_decisions.approved_by`에만
    남는다. 설정 변경(한도 조정, 킬 스위치)까지 남기려면 별도 테이블이 필요하다.
-4. **부분 청산** — 매도는 현재 보유 전량이다. 비중 조절식 매도를 원하면
+3. **부분 청산** — 매도는 현재 보유 전량이다. 비중 조절식 매도를 원하면
    `market_service.build_decision`의 SELL 분기를 고친다.
-5. **마켓 유형 확장** — 지금은 `BUY/SELL/HOLD` 3지선다 고정이다. "목표가 도달 여부"
+4. **마켓 유형 확장** — 지금은 `BUY/SELL/HOLD` 3지선다 고정이다. "목표가 도달 여부"
    같은 이진 마켓을 넣으려면 `Outcome` enum과 `resolve_outcome`을 마켓 유형별로
    분리해야 한다.
 
@@ -226,6 +248,7 @@ tests/test_risk.py           리스크 가드
 tests/test_market_hours.py   장 운영시간 판정과 연동 가드
 tests/test_fills.py          체결 동기화와 상태 판정
 tests/test_notifications.py  알림 문구와 실패 격리
+tests/test_symbols.py        종목 검색 순위와 CSV 임포트
 tests/test_kis_constants.py  거래ID 파생 규칙
 tests/test_kis_broker.py     KIS 체결 조회 응답 해석
 tests/test_kis_client.py     토큰 만료 해석, rt_cd 오류 변환

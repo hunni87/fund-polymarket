@@ -2,12 +2,15 @@ import type {
   Decision,
   Fund,
   Market,
+  MarketCreate,
   MarketDetail,
   Member,
   Order,
   OrderSyncResult,
   Outcome,
+  Quote,
   Score,
+  Symbol,
   SystemStatus,
 } from './types'
 
@@ -89,6 +92,13 @@ export const api = {
 
   funds: () => request<Fund[]>('/funds'),
   positions: (fundId: number) => request<unknown[]>(`/funds/${fundId}/positions`),
+
+  searchSymbols: (q: string) =>
+    request<Symbol[]>(`/symbols?q=${encodeURIComponent(q)}`),
+  quoteSymbol: (ticker: string) => request<Quote>(`/symbols/${ticker}/quote`),
+
+  createMarket: (payload: MarketCreate) =>
+    request<Market>('/markets', { method: 'POST', body: JSON.stringify(payload) }),
 
   markets: (status?: string) =>
     request<Market[]>(`/markets${status ? `?status=${status}` : ''}`),
